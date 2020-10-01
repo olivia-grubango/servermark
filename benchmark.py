@@ -26,16 +26,16 @@ SERVERS = {
     #     "aiohttp_server", ServerType.gunicorn, ["--worker-class", "aiohttp.worker.GunicornUVLoopWebWorker"]
     # ),
     # 'fastapi': Server('fastapi_server', ServerType.uvicorn, []),
-    "flask": Server("flask_server", ServerType.direct, []),
-    "flask-gunicorn-eventlet": Server("flask_server", ServerType.gunicorn, ["--worker-class", "eventlet"]),
-    "flask-gunicorn-gevent": Server("flask_server", ServerType.gunicorn, ["--worker-class", "gevent"]),
-    "flask-uwsgi-4threads-4proc": Server(
-        "flask_server", ServerType.uwsgi, ["-s", "0.0.0.0:5000", "--threads", "4", "--process", "4"]
-    ),
-    "flask-uwsgi-4threads-4workers": Server(
-        "flask_server", ServerType.uwsgi, ["-s", "0.0.0.0:5000", "--threads", "4", "--workers", "4"]
-    ),
-    "flask-uwsgi": Server("flask_server", ServerType.uwsgi, ["-s", "0.0.0.0:5000"]),
+    # "flask": Server("flask_server", ServerType.direct, []),
+    # "flask-gunicorn-eventlet": Server("flask_server", ServerType.gunicorn, ["--worker-class", "eventlet"]),
+    # "flask-gunicorn-gevent": Server("flask_server", ServerType.gunicorn, ["--worker-class", "gevent"]),
+    # "flask-uwsgi-4threads-4proc": Server(
+    #     "flask_server", ServerType.uwsgi, ["-s", "0.0.0.0:5000", "--threads", "4", "--process", "4"]
+    # ),
+    # "flask-uwsgi-4threads-4workers": Server(
+    #     "flask_server", ServerType.uwsgi, ["-s", "0.0.0.0:5000", "--threads", "4", "--workers", "4"]
+    # ),
+    # "flask-uwsgi": Server("flask_server", ServerType.uwsgi, ["-s", "0.0.0.0:5000"]),
     # "flask-gunicorn-meinheld": Server(
     #     "flask_server", ServerType.gunicorn, ["--worker-class", "meinheld.gmeinheld.MeinheldWorker"]
     # ),
@@ -44,10 +44,20 @@ SERVERS = {
     # "quart-hypercorn": Server("quart_server", ServerType.hypercorn, ["--worker-class", "uvloop"]),
     # "quart-trio": Server("quart_trio_server", ServerType.hypercorn, ["--worker-class", "trio"]),
     # "quart-uvicorn": Server("quart_server", ServerType.uvicorn, []),
-    # "sanic": Server("sanic_server", ServerType.direct, []),
+    "sanic": Server("sanic_server", ServerType.direct, []),
     # "sanic-gunicorn-uvloop": Server(
-    # "sanic_server", ServerType.gunicorn, ["--worker-class", "sanic.worker.GunicornWorker"]
+    #     "sanic_server", ServerType.gunicorn, ["--worker-class", "sanic.worker.GunicornWorker"]
     # ),
+    # "sanic-daphne": Server(
+    #     "sanic_server", ServerType.daphne, []
+    # ),
+    # "sanic-uvicorn": Server(
+    #     "sanic_server", ServerType.uvicorn, []
+    # ),
+    # "sanic-hypercorn": Server(
+    #     "sanic_server", ServerType.hypercorn, []
+    # ),
+
     # "starlette": Server("starlette_server", ServerType.uvicorn, []),
 }
 
@@ -63,6 +73,7 @@ PORT = 5000
 
 def run_server(server):
     if server.server_type == ServerType.gunicorn:
+        print("gunicorn", "{}:app".format(server.module), "-b", "{}:{}".format(HOST, PORT))
         return subprocess.Popen(
             ["gunicorn", "{}:app".format(server.module), "-b", "{}:{}".format(HOST, PORT)] + server.settings,
             stdout=subprocess.DEVNULL,
@@ -70,6 +81,7 @@ def run_server(server):
             cwd="servers",
         )
     elif server.server_type == ServerType.uvicorn:
+        print("uvicorn", "{}:app".format(server.module), "--host", HOST, "--port", str(PORT), "--no-access-log")
         return subprocess.Popen(
             ["uvicorn", "{}:app".format(server.module), "--host", HOST, "--port", str(PORT), "--no-access-log"]
             + server.settings,
@@ -78,6 +90,7 @@ def run_server(server):
             stderr=subprocess.DEVNULL,
         )
     elif server.server_type == ServerType.daphne:
+        print("daphne", "{}:app".format(server.module), "-b", HOST, "-p", str(PORT))
         return subprocess.Popen(
             ["daphne", "{}:app".format(server.module), "-b", HOST, "-p", str(PORT)] + server.settings,
             cwd="servers",
@@ -85,6 +98,7 @@ def run_server(server):
             stderr=subprocess.DEVNULL,
         )
     elif server.server_type == ServerType.hypercorn:
+        print("hypercorn", "{}:app".format(server.module), "-b", "{}:{}".format(HOST, PORT))
         return subprocess.Popen(
             ["hypercorn", "{}:app".format(server.module), "-b", "{}:{}".format(HOST, PORT)] + server.settings,
             cwd="servers",
@@ -141,8 +155,8 @@ if __name__ == "__main__":
             process = run_server(server)
             sleep(5)
             test_server(server)
-            results["get"].append((name, run_benchmark("10")))
-            results["post"].append((name, run_benchmark("", "scripts/post.lua")))
+            results["get"].append((name, run_benchmark("/tracks")))
+            results["post"].append((name, run_benchmark("/tracks", "scripts/big_post.lua")))
         finally:
             process.terminate()
             process.wait()

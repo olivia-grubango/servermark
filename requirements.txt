@@ -14,3 +14,6 @@ starlette
 trio
 uvicorn
 uvloop
+uwsgi
+python-multipart
+ujson
