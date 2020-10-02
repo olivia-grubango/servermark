@@ -39,12 +39,15 @@ SERVERS = {
     # "flask-gunicorn-meinheld": Server(
     #     "flask_server", ServerType.gunicorn, ["--worker-class", "meinheld.gmeinheld.MeinheldWorker"]
     # ),
-    # "quart": Server("quart_server", ServerType.direct, []),
-    # "quart-daphne": Server("quart_server", ServerType.daphne, []),
-    # "quart-hypercorn": Server("quart_server", ServerType.hypercorn, ["--worker-class", "uvloop"]),
+    # "blacksheep-daphne": Server("blacksheep_server", ServerType.daphne, []),
+    "blacksheep-hypercorn": Server("blacksheep_server", ServerType.hypercorn, []),
+    "blacksheep-uvicorn": Server("blacksheep_server", ServerType.uvicorn, []),
+    "quart": Server("quart_server", ServerType.direct, []),
+    "quart-daphne": Server("quart_server", ServerType.daphne, []),
+    "quart-hypercorn": Server("quart_server", ServerType.hypercorn, ["--worker-class", "uvloop"]),
     # "quart-trio": Server("quart_trio_server", ServerType.hypercorn, ["--worker-class", "trio"]),
-    # "quart-uvicorn": Server("quart_server", ServerType.uvicorn, []),
-    "sanic": Server("sanic_server", ServerType.direct, []),
+    "quart-uvicorn": Server("quart_server", ServerType.uvicorn, []),
+    # "sanic": Server("sanic_server", ServerType.direct, []),
     # "sanic-gunicorn-uvloop": Server(
     #     "sanic_server", ServerType.gunicorn, ["--worker-class", "sanic.worker.GunicornWorker"]
     # ),
@@ -124,12 +127,14 @@ def run_server(server):
 
 
 def test_server(server):
-    response = requests.get("http://{}:{}/10".format(HOST, PORT))
+    response = requests.get("http://{}:{}/tracks/".format(HOST, PORT))
     assert response.status_code == 200
-    assert server.module in response.text
-    response = requests.post("http://{}:{}/".format(HOST, PORT), data={"fib": 10})
+    # assert server.module in response.text
+    assert 'store_tracks' in response.json()
+    response = requests.post("http://{}:{}/tracks".format(HOST, PORT), json={"camera_tracks": [1, 2, 3]})
     assert response.status_code == 200
-    assert server.module in response.text
+    assert 'cam_track_count' in response.json()
+    # assert server.module in response.text
 
 
 def run_benchmark(path, script=None):
@@ -138,7 +143,7 @@ def run_benchmark(path, script=None):
     else:
         script_cmd = ""
     output = subprocess.check_output(
-        "wrk -c 64 -d 30s {} http://{}:{}/{}".format(script_cmd, HOST, PORT, path), shell=True,
+        "wrk -c 32 -d 60s {} http://{}:{}/{}".format(script_cmd, HOST, PORT, path), shell=True,
     )
     match = REQUESTS_SECOND_RE.search(output.decode())
     requests_second = float(match.group("reqsec"))
@@ -155,8 +160,8 @@ if __name__ == "__main__":
             process = run_server(server)
             sleep(5)
             test_server(server)
-            results["get"].append((name, run_benchmark("/tracks")))
-            results["post"].append((name, run_benchmark("/tracks", "scripts/big_post.lua")))
+            results["get"].append((name, run_benchmark("tracks")))
+            results["post"].append((name, run_benchmark("tracks", "scripts/big_post.lua")))
         finally:
             process.terminate()
             process.wait()

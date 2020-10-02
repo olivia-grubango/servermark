@@ -1,0 +1,100 @@
+7MB json POST and GET
+get requests/second
+###############################################################################
+                                                             6  quart-uvicorn
+                                                             6  quart-daphne
+                                                             6  quart
+                                                             7  quart-hypercorn
+█                                                           16  sanic
+█████████████████████████████████████████████████████████  803  quart-trio
+post requests/second
+###############################################################################
+                                                             2  quart-uvicorn
+                                                             3  sanic
+█                                                           13  quart-trio
+███                                                         27  quart-daphne
+████████████████████████████████████████████████           353  quart
+████████████████████████████████████████████████████████   414  quart-hypercorn
+
+
+***************************
+Adding blacksheep
+get requests/second
+###############################################################################
+                                                        4  quart-daphne
+                                                        5  quart
+                                                        5  quart-uvicorn
+                                                        6  blacksheep-hypercorn
+                                                        6  quart-hypercorn
+                                                        6  blacksheep-uvicorn
+                                                       14  sanic
+██████████                                            681  quart-trio
+███████████████████████████████████████████████████  3419  blacksheep-daphne
+post requests/second
+###############################################################################
+                                                        2  quart-uvicorn
+                                                        3  blacksheep-uvicorn
+                                                        3  blacksheep-hypercorn
+                                                        3  sanic
+                                                        4  blacksheep-daphne
+█                                                      12  quart-trio
+█████                                                  33  quart-daphne
+█████████████████████████████████████████████████     332  quart-hypercorn
+████████████████████████████████████████████████████  347  quart
+
+********************************
+get requests/second
+###############################################################################
+██████████████████                                      5  quart-daphne
+████████████████████                                    6  quart
+████████████████████                                    6  quart-hypercorn
+█████████████████████                                   6  blacksheep-uvicorn
+██████████████████████                                  6  quart-uvicorn
+██████████████████████                                  6  blacksheep-hypercorn
+█████████████████████████████████████████████████████  15  sanic
+post requests/second
+###############################################################################
+                                                        2  quart-uvicorn
+                                                        2  blacksheep-uvicorn
+                                                        3  blacksheep-hypercorn
+                                                        3  sanic
+███                                                    29  quart-daphne
+███████████████████████████████████████               294  quart
+████████████████████████████████████████████████████  387  quart-hypercorn
+
+********************************************************
+-c 32 -d 60s
+get requests/second
+###############################################################################
+                                                        6  blacksheep-uvicorn
+                                                        7  blacksheep-hypercorn
+███████████████████████████                           959  quart
+███████████████████████████████                      1108  quart-daphne
+█████████████████████████████████                    1165  quart-hypercorn
+███████████████████████████████████████████████████  1800  quart-uvicorn
+post requests/second
+###############################################################################
+                                                        1  quart-uvicorn
+                                                        4  blacksheep-hypercorn
+                                                        4  blacksheep-uvicorn
+███                                                    32  quart-daphne
+██████████████████████████████████████████████        476  quart
+████████████████████████████████████████████████████  530  quart-hypercorn
+
+
+*****************
+###############################################################################
+                                                        6  blacksheep-uvicorn
+                                                        6  blacksheep-hypercorn
+████████████████████████████                          944  quart
+████████████████████████████████                     1075  quart-daphne
+████████████████████████████████████                 1220  quart-hypercorn
+███████████████████████████████████████████████████  1684  quart-uvicorn
+post requests/second
+###############################################################################
+                                                        1  quart-uvicorn
+                                                        3  blacksheep-hypercorn
+                                                        3  blacksheep-uvicorn
+███                                                    32  quart-daphne
+██████████████████████████████████████████████        450  quart
+████████████████████████████████████████████████████  502  quart-hypercorn

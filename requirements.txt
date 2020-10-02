@@ -1,5 +1,6 @@
 aiohttp
 ascii_graph
+blacksheep
 daphne
 eventlet
 fastapi
