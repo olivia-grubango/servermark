@@ -7,7 +7,7 @@ app = Sanic()
 for k, v in app.config.items():
     print(k, v)
 
-track_resp = json.load(open('../tracks.json'))
+track_resp = json.load(open('data/tracks.json'))
 
 @app.route('/<number:int>')
 async def index(request, number=1):

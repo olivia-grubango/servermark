@@ -1,7 +1,7 @@
 -- example HTTP POST script which demonstrates setting the
 -- HTTP method, body, and adding a header
 
-local body = io.open('tracks.json')
+local body = io.open('data/tracks.json')
 wrk.body = body:read("*all")
 body.close()
 wrk.method = "POST"

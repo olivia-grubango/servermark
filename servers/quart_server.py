@@ -2,7 +2,7 @@ from quart import Quart, request
 import ujson as json
 
 app = Quart(__name__)
-track_resp = json.load(open('../tracks.json'))
+track_resp = json.load(open('data/tracks.json'))
 
 
 @app.route('/<int:number>')
