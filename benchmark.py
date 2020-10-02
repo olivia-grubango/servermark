@@ -25,26 +25,27 @@ SERVERS = {
     # "aiohttp-gunicorn-uvloop": Server(
     #     "aiohttp_server", ServerType.gunicorn, ["--worker-class", "aiohttp.worker.GunicornUVLoopWebWorker"]
     # ),
-    # 'fastapi': Server('fastapi_server', ServerType.uvicorn, []),
-    # "flask": Server("flask_server", ServerType.direct, []),
+    'fastapi-uvicorn': Server('fastapi_server', ServerType.uvicorn, []),
+    #'fastapi-hypercorn': Server('fastapi_server', ServerType.hypercorn, []),
+    "flask": Server("flask_server", ServerType.direct, []),
     # "flask-gunicorn-eventlet": Server("flask_server", ServerType.gunicorn, ["--worker-class", "eventlet"]),
     # "flask-gunicorn-gevent": Server("flask_server", ServerType.gunicorn, ["--worker-class", "gevent"]),
     # "flask-uwsgi-4threads-4proc": Server(
-    #     "flask_server", ServerType.uwsgi, ["-s", "0.0.0.0:5000", "--threads", "4", "--process", "4"]
-    # ),
+    #    "flask_server", ServerType.uwsgi, ["-s", "0.0.0.0:5000", "--threads", "4", "--process", "4"]
+    #),
     # "flask-uwsgi-4threads-4workers": Server(
     #     "flask_server", ServerType.uwsgi, ["-s", "0.0.0.0:5000", "--threads", "4", "--workers", "4"]
     # ),
-    # "flask-uwsgi": Server("flask_server", ServerType.uwsgi, ["-s", "0.0.0.0:5000"]),
+    "flask-uwsgi": Server("flask_server", ServerType.uwsgi, []),
     # "flask-gunicorn-meinheld": Server(
     #     "flask_server", ServerType.gunicorn, ["--worker-class", "meinheld.gmeinheld.MeinheldWorker"]
     # ),
-    # "quart": Server("quart_server", ServerType.direct, []),
+    "quart": Server("quart_server", ServerType.direct, []),
     # "quart-daphne": Server("quart_server", ServerType.daphne, []),
     # "quart-hypercorn": Server("quart_server", ServerType.hypercorn, ["--worker-class", "uvloop"]),
     # "quart-trio": Server("quart_trio_server", ServerType.hypercorn, ["--worker-class", "trio"]),
-    # "quart-uvicorn": Server("quart_server", ServerType.uvicorn, []),
-    "sanic": Server("sanic_server", ServerType.direct, []),
+    "quart-uvicorn": Server("quart_server", ServerType.uvicorn, []),
+    # "sanic": Server("sanic_server", ServerType.direct, []),
     # "sanic-gunicorn-uvloop": Server(
     #     "sanic_server", ServerType.gunicorn, ["--worker-class", "sanic.worker.GunicornWorker"]
     # ),
@@ -61,7 +62,9 @@ SERVERS = {
     # "starlette": Server("starlette_server", ServerType.uvicorn, []),
 }
 
+TEST_SECONDS = 10
 REQUESTS_SECOND_RE = re.compile(r"Requests\/sec\:\s*(?P<reqsec>\d+\.\d+)(?P<unit>[kMG])?")
+NON_SUCCESS_RESPONSES_RE = re.compile(r"Non-2xx or 3xx responses\:\s*(?P<num_failed>\d+).*")
 UNITS = {
     "k": 1_000,
     "M": 1_000_000,
@@ -106,15 +109,17 @@ def run_server(server):
             stderr=subprocess.DEVNULL,
         )
     elif server.server_type == ServerType.direct:
-        return subprocess.Popen(
+        print("python", "{}.py".format(server.module))
+        return subprocess.run(
             ["python", "{}.py".format(server.module)] + server.settings,
             cwd="servers",
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+#            stdout=subprocess.DEVNULL,
+#            stderr=subprocess.DEVNULL,
         )
     elif server.server_type == ServerType.uwsgi:
+        print("uwsgi", "--protocol=http", "-w", "{}:app".format(server.module), "-s", "0.0.0.0:5000")
         return subprocess.Popen(
-            ["uwsgi", "--protocol=http", "-w", "{}:app".format(server.module)] + server.settings,
+            ["uwsgi", "--protocol=http", "-w", "{}:app".format(server.module), "-s", "0.0.0.0:5000"] + server.settings,
             cwd="servers",
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -138,9 +143,16 @@ def run_benchmark(path, script=None):
     else:
         script_cmd = ""
     output = subprocess.check_output(
-        "wrk -c 64 -d 30s {} http://{}:{}/{}".format(script_cmd, HOST, PORT, path), shell=True,
+        "wrk -c 64 -d {}s {} http://{}:{}{}".format(TEST_SECONDS, script_cmd, HOST, PORT, path), shell=True,
     )
-    match = REQUESTS_SECOND_RE.search(output.decode())
+    output_str = output.decode()
+    non_success_match = NON_SUCCESS_RESPONSES_RE.search(output_str)
+    if non_success_match is not None:
+        non_success_count = int(non_success_match.group("num_failed"))
+        print(f"{script_cmd} failed with {non_success_count} non-successful response codes")
+        return 0
+
+    match = REQUESTS_SECOND_RE.search(output_str)
     requests_second = float(match.group("reqsec"))
     if match.group("unit"):
         requests_second = requests_second * UNITS[match.group("unit")]
@@ -152,15 +164,24 @@ if __name__ == "__main__":
     for name, server in SERVERS.items():
         try:
             print("Testing {} {}".format(name, datetime.now().isoformat()))
-            process = run_server(server)
-            sleep(5)
+#            process = run_server(server)
+#            sleep(2)
             test_server(server)
-            results["get"].append((name, run_benchmark("/tracks")))
-            results["post"].append((name, run_benchmark("/tracks", "scripts/big_post.lua")))
+#            print("-- fibonacci test")
+#            results["get fib"].append((name, run_benchmark("/10")))
+            print("-- get small tracks")
+            results["get smaller tracks"].append((name, run_benchmark("/smaller-tracks")))
+#            print("-- post small tracks")
+#            results["post smaller tracks"].append((name, run_benchmark("/tracks", "scripts/smaller_post.lua")))
+            print("-- get big tracks")
+            results["get big tracks"].append((name, run_benchmark("/bigger-tracks")))
+#            print("-- post big tracks")
+#            results["post big tracks"].append((name, run_benchmark("/tracks", "scripts/big_post.lua")))
         finally:
-            process.terminate()
-            process.wait()
+            break
+#            process.terminate()
+#            process.wait()
     graph = Pyasciigraph()
     for key, value in results.items():
-        for line in graph.graph("{} requests/second".format(key), sorted(value, key=lambda result: result[1])):
+        for line in graph.graph("{} requests/second ({}s test)".format(key, TEST_SECONDS), sorted(value, key=lambda result: result[1])):
             print(line)

@@ -2,7 +2,8 @@ from quart import Quart, request
 import ujson as json
 
 app = Quart(__name__)
-track_resp = json.load(open('data/tracks.json'))
+big_track_resp = json.load(open('data/tracks.json'))
+smaller_track_resp = json.load(open('data/smaller_tracks.json'))
 
 
 @app.route('/<int:number>')
@@ -17,15 +18,20 @@ async def post():
     return "{}-fib({})={}".format(__file__, number, _fib(int(number)))
 
 
-@app.route('/tracks/', methods=['POST'])
+@app.route('/smaller-tracks', methods=['GET'])
+def get_smaller_tracks():
+    return smaller_track_resp
+
+
+@app.route('/bigger-tracks', methods=['GET'])
+def get_bigger_tracks():
+    return big_track_resp
+
+
+@app.route('/tracks', methods=['POST'])
 async def post_tracks():
     tracks = await request.get_json()
     return {'cam_track_count': len(tracks['camera_tracks'])}
-
-
-@app.route('/tracks/', methods=['GET'])
-async def get_tracks():
-    return track_resp
 
 
 def _fib(n):
